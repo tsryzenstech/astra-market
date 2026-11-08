@@ -1,7 +1,9 @@
-# Builds Market and publishes it as a GitHub release on every change of the
-# app or of config.json (e.g. a new server address). When ASTRA_CLOUD_URL and
-# ASTRA_CLOUD_TOKEN are set (an admin session token of astra cloud), the new
-# version is also uploaded to Market itself, so phones get it as an update.
+# Builds Market with the astraOS SDK (design check included) and publishes it as
+# a GitHub release on every change of the app or of config.json. Market is a
+# system app: astra's "apps" workflow publishes it on Market (astra cloud), from
+# astra's copy (tools/market/update.py brings this repository's into it), with
+# the version the system image gives it; this one does not, so that the two
+# version numbers never meet.
 name: release
 on:
   push:
@@ -15,9 +17,6 @@ permissions:
 jobs:
   market:
     runs-on: ubuntu-24.04
-    env:
-      ASTRA_CLOUD_URL: ${{ vars.ASTRA_CLOUD_URL || 'http://34.155.86.153' }}
-      ASTRA_CLOUD_TOKEN: ${{ secrets.ASTRA_CLOUD_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -44,9 +43,3 @@ jobs:
           files: |
             dist/com.astra.market.apkg
             dist/release.json
-      - name: Publish on astra cloud
-        if: env.ASTRA_CLOUD_TOKEN != ''
-        run: |
-          curl -fsS -X PUT --data-binary @dist/com.astra.market.apkg \
-               -H "Authorization: Bearer $ASTRA_CLOUD_TOKEN" \
-               "$ASTRA_CLOUD_URL/api/dev/apps/com.astra.market/versions?notes=Market%20${{ steps.v.outputs.version }}"
